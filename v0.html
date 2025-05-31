@@ -1,0 +1,93 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">    
+    <title>Flow My Pills, the Policecop Wept</title>
+    <style>
+
+html, body {
+  width:  100%;
+  height: 100%;
+  margin: 0;
+}
+
+    </style>
+  </head>
+  <body>
+    <center>
+      <canvas id='ekraniszcze' width='33' height='33' style='border: 1px solid black'></canvas>
+    </center>
+    
+<script>
+
+let mk_audio = fname => {
+    var audio = document.createElement("audio");
+    audio.setAttribute("src", fname);
+    return audio
+}
+
+const audioz = [
+    mk_audio("d1.ogg"),
+    mk_audio("d2.ogg"),
+    mk_audio("d3.ogg"),
+    mk_audio("d4.ogg"),
+    mk_audio("d5.ogg"),
+    mk_audio("d6.ogg"),
+    mk_audio("d7.ogg"),
+    mk_audio("d8.ogg"),
+    mk_audio("d9.ogg"),
+    mk_audio("d10.ogg"),
+    mk_audio("d11.ogg")
+];
+
+let play = (i, rate, vol) => {
+    var audio = audioz[i % audioz.length];
+    audio.vol = vol;
+    audio.playbackRate = rate;
+    audio.play();
+}
+
+let w_range = (min,max,p) => min+p*(max-min)
+
+let init_stuff = () => {
+    var canvas = document.getElementById("ekraniszcze");
+    var context = canvas.getContext("2d");
+    var idx = 0; /// pacz jak się domknę w ewencie mordo
+    context.canvas.width  = window.innerWidth;
+    context.canvas.height = window.innerHeight;
+    var cls = () => {
+        context.fillStyle="#ff0";
+        context.fillRect(0,0,context.canvas.width,context.canvas.height);
+        context.fillStyle="#000";
+    };
+    var msg = txt => {
+        context.font = "33px sans-serif";
+        context.textAlign = "center";
+        context.fillText(txt, canvas.width/2, canvas.height/2);
+    };
+    canvas.addEventListener('click', event => {
+        var p0 = event.pageX / context.canvas.width;
+        var p1 = event.pageY / context.canvas.height;
+        var vol = w_range(0.2,0.6,p0);
+        var rate = w_range(0.3,5,p1);
+        var ang0 = 2*Math.PI*((idx+1)/(1+audioz.length));
+        var ang1 = 0.23*Math.PI+ang0;
+        cls();
+        context.beginPath();
+        for(var r=10;r<(23+p0*242);r+=(1.1-p1)*20)
+            context.arc(event.pageX, event.pageY, r, ang0, ang1)
+        context.stroke();
+        idx += 1; idx %= audioz.length;
+        play(idx, vol, rate);
+        ///console.log([p0,p1,idx])
+    });
+    cls();
+    msg("keep clicking me");
+}
+
+init_stuff()
+
+    </script>
+  </body>
+</html>
