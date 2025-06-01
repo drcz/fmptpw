@@ -10,25 +10,24 @@ let load_voice = (i,url) => {
   const request = new XMLHttpRequest();
   request.open("GET", url);
   request.responseType = "arraybuffer";
-  var src = audio_ctx.createBufferSource();
-  var amp = audio_ctx.createGain();
-  var pan = new StereoPannerNode(audio_ctx);
-  src.loop = true;
-  amp.gain.value = 0;
-  pan.pan.value = 0;
-  src.connect(pan).connect(amp).connect(main_amp);
-  voices[i] = {src:src, amp: amp, pan: pan};
+  var src = audio_ctx.createBufferSource(); src.loop = true;
+  var amp = audio_ctx.createGain(); amp.gain.value = 0;
+  var pan = new StereoPannerNode(audio_ctx); pan.pan.value = 0;
+  var lpf = audio_ctx.createBiquadFilter(); lpf.type = "lowpass"; lpf.frequency.value = 12000;
+  src.connect(lpf).connect(pan).connect(amp).connect(main_amp);
+  voices[i] = {src:src, amp: amp, pan: pan, lpf: lpf};
   request.onload = () => {
     audio_ctx.decodeAudioData(request.response, data => { voices[i].src.buffer = data ; voices[i].src.start(); });
   };
   request.send();
 };
 
-let modify_voice = (i, rate, vol, pan) => {
+let modify_voice = (i, rate, vol, pan, cutoff) => {
     var voice = voices[i % voices.length];
     voice.src.playbackRate.value = rate;
     voice.pan.pan.value = pan;
     voice.amp.gain.value = vol;
+    voice.lpf.frequency.value = cutoff;
 };
 
 let w_range = (min,max,p) => min+p*(max-min)
@@ -59,9 +58,10 @@ let init_stuff = () => {
     canvas.addEventListener('click', event => {
         var p0 = event.pageX / video_ctx.canvas.width;
         var p1 = event.pageY / video_ctx.canvas.height;
-        var vol = w_range(0.2,0.6,0.5);
+        var vol = w_range(0.23,0.93,Math.random());
         var pan = w_range(-1,1,p0);
         var rate = w_range(0.5,4,p1);
+        var cutoff = w_range(20,20000,(1-p1));
         var ang0 = 2*Math.PI*((idx+1)/(1+voices.length));
         var ang1 = 0.23*Math.PI+ang0;
         idx += 1; idx %= voices.length;
@@ -74,8 +74,8 @@ let init_stuff = () => {
             video_ctx.arc(event.pageX, event.pageY, r, ang0, ang1)
         video_ctx.stroke();
 
-        modify_voice(idx, rate, vol, pan);
-        console.log([idx, rate, vol, pan])
+        modify_voice(idx, rate, vol, pan, cutoff);
+        console.log([idx, rate, vol, pan, cutoff])
     });
     cls(2);
     msg("keep tapping me");
